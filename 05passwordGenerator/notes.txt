@@ -1,0 +1,181 @@
+### React Hooks Explained: `useState`, `useCallback`, `useEffect`, `useRef`
+
+---
+
+#### **1. `useState` - State Management**
+**Purpose**:  
+Manages reactive data in functional components. Triggers re-renders when data changes.
+
+**Syntax**:  
+```jsx
+const [state, setState] = useState(initialValue);
+```
+
+**Example**:  
+```jsx
+import { useState } from 'react';
+
+function Counter() {
+  const [count, setCount] = useState(0);
+
+  return (
+    <div>
+      <p>Count: {count}</p>
+      <button onClick={() => setCount(count + 1)}>Increment</button>
+    </div>
+  );
+}
+```
+
+**Key Notes**:  
+- Never mutate state directly: `count++` ❌, use `setCount()` ✅  
+- Updates are asynchronous  
+- Initial value can be a function (lazy initialization): `useState(() => computeExpensiveValue())`  
+
+---
+
+#### **2. `useEffect` - Side Effects**
+**Purpose**:  
+Handles side effects (API calls, subscriptions, DOM manipulations) in functional components. Replaces lifecycle methods like `componentDidMount`, `componentDidUpdate`, and `componentWillUnmount`.
+
+**Syntax**:  
+```jsx
+useEffect(() => {
+  // Side effect logic
+  return () => { /* Cleanup logic */ };
+}, [dependencies]);
+```
+
+**Example**:  
+```jsx
+import { useState, useEffect } from 'react';
+
+function DataFetcher() {
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    fetch('/api/data')
+      .then(res => res.json())
+      .then(setData);
+
+    return () => {
+      // Cancel pending requests (cleanup)
+    };
+  }, []); // Empty array = runs once on mount
+
+  return <div>{data ? data : 'Loading...'}</div>;
+}
+```
+
+**Key Notes**:  
+| Dependency Array | Behavior |  
+|------------------|----------|  
+| `[]` | Runs once on mount |  
+| `[var1, var2]` | Runs when `var1` or `var2` changes |  
+| No array | Runs on every render |  
+
+---
+
+#### **3. `useCallback` - Memoized Functions**
+**Purpose**:  
+Memoizes functions to prevent unnecessary re-creations. Optimizes child components that rely on reference equality.
+
+**Syntax**:  
+```jsx
+const memoizedFn = useCallback(() => {
+  // Function logic
+}, [dependencies]);
+```
+
+**Example**:  
+```jsx
+import { useState, useCallback } from 'react';
+
+function Parent() {
+  const [count, setCount] = useState(0);
+  
+  // Only re-created when `count` changes
+  const handleClick = useCallback(() => {
+    console.log(`Count: ${count}`);
+  }, [count]);
+
+  return <Child onClick={handleClick} />;
+}
+
+// Optimized child component
+const Child = React.memo(({ onClick }) => (
+  <button onClick={onClick}>Log Count</button>
+));
+```
+
+**Key Notes**:  
+- Prevents unnecessary re-renders in optimized child components (`React.memo`)  
+- Essential when passing callbacks to deeply nested components  
+- Overusing can harm performance (memory overhead)  
+
+---
+
+#### **4. `useRef` - Mutable References**
+**Purpose**:  
+Creates mutable object that persists across renders. Two main use cases:  
+1. Accessing DOM elements  
+2. Storing mutable values without triggering re-renders  
+
+**Syntax**:  
+```jsx
+const ref = useRef(initialValue);
+// Access: ref.current
+```
+
+**Example 1 (DOM Access)**:  
+```jsx
+import { useRef } from 'react';
+
+function TextInput() {
+  const inputRef = useRef();
+
+  const focusInput = () => inputRef.current.focus();
+
+  return (
+    <>
+      <input ref={inputRef} />
+      <button onClick={focusInput}>Focus</button>
+    </>
+  );
+}
+```
+
+**Example 2 (Mutable Value)**:  
+```jsx
+function Timer() {
+  const [seconds, setSeconds] = useState(0);
+  const intervalRef = useRef();
+
+  useEffect(() => {
+    intervalRef.current = setInterval(
+      () => setSeconds(s => s + 1), 
+      1000
+    );
+    return () => clearInterval(intervalRef.current);
+  }, []);
+
+  return <div>Seconds: {seconds}</div>;
+}
+```
+
+**Key Notes**:  
+- Changing `ref.current` does NOT trigger re-render  
+- Values persist between renders (like instance variables)  
+- Never use refs for state that should trigger UI updates  
+
+---
+
+### When to Use Each Hook
+| Hook | Use Case |  
+|------|----------|  
+| `useState` | Managing component state (form inputs, UI toggles) |  
+| `useEffect` | Side effects (API calls, event listeners, subscriptions) |  
+| `useCallback` | Optimizing callbacks passed to child components |  
+| `useRef` | Accessing DOM elements or storing mutable values |  
+
+> 💡 **Golden Rule**: Always use hooks at the top level of your component (never in loops/conditions).
