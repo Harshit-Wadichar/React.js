@@ -1,0 +1,4 @@
+npm install @reduxjs/toolkit
+npm install react-redux
+npm i react-router-dom appwrite @tinymce/tinymce-react ht
+ml-react-parser react-hook-form
